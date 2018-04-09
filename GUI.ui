@@ -430,7 +430,58 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="2">
+    <item row="7" column="4">
+     <widget class="QLineEdit" name="lineEdit"/>
+    </item>
+    <item row="2" column="4">
+     <layout class="QGridLayout" name="gridLayout_2">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetNoConstraint</enum>
+      </property>
+      <property name="horizontalSpacing">
+       <number>7</number>
+      </property>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="btnDisconnect">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Disconnect</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="btnPairing">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>66666</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Pairing Mode</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="4">
      <widget class="QPushButton" name="btnClose">
       <property name="minimumSize">
        <size>
@@ -449,63 +500,48 @@
       </property>
      </widget>
     </item>
-    <item row="5" column="4">
-     <widget class="QPushButton" name="btnAlarm3">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>50</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>PushButton</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="4">
-     <widget class="QPushButton" name="btnPairing">
-      <property name="minimumSize">
-       <size>
-        <width>100</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>200</width>
-        <height>50</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Pairing Mode</string>
-      </property>
-     </widget>
-    </item>
     <item row="3" column="4">
-     <widget class="QPushButton" name="btnAlarm1">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>50</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>PushButton</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="4">
-     <widget class="QPushButton" name="btnAlarm2">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>50</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>PushButton</string>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="btnAlarm1">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Alarm 1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnAlarm2">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Alarm 2</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnAlarm3">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Alarm 3</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -530,5 +566,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPairing</sender>
+   <signal>pressed()</signal>
+   <receiver>GUI</receiver>
+   <slot>btnPairingPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>128</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>369</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnAlarm1</sender>
+   <signal>clicked()</signal>
+   <receiver>GUI</receiver>
+   <slot>btnAlarm1Pressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>369</x>
+     <y>258</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>369</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>btnPairingPressed()</slot>
+  <slot>btnAlarm1Pressed()</slot>
+  <slot>btnAlarm2Pressed()</slot>
+  <slot>btnAlarm3Pressed()</slot>
+ </slots>
 </ui>

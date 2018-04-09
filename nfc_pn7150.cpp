@@ -25,8 +25,7 @@ nfc_pn7150::~nfc_pn7150()
 
 void nfc_pn7150::run()
 {
-    QObject::connect(this, SIGNAL(sigCardData(QByteArray)), parentThread, SLOT(sltCardData(QByteArray)));
-    QObject::connect(this, SIGNAL(sigMsg(QString,int)), parentThread, SLOT(sltMsg(QString,int)));
+    QObject::connect(this, SIGNAL(sigCardData(QString)), parentThread, SLOT(sltCardData(QString)));
     cmd_poll();
 }
 
@@ -996,6 +995,11 @@ void nfc_pn7150::PrintNDEFContent(nfc_tag_info_t* TagInfo, ndef_info_t* NDEFinfo
                 {
                     qDebug() << "Type : 'Text'";
                     qDebug() << TextContent;
+                    QString dataUpper = TextContent;
+                    dataUpper = dataUpper.toUpper();
+                    qDebug() << dataUpper.toUpper();
+                    emit sigCardData(dataUpper);
+
                 }
                 else
                 {
@@ -1158,19 +1162,19 @@ void nfc_pn7150::PrintNDEFContent(nfc_tag_info_t* TagInfo, ndef_info_t* NDEFinfo
             {
             } break;
         }
-        qDebug() << "NDEF data received of Length " + QString::number(ndefRawLen);
+        //qDebug() << "NDEF data received of Length " + QString::number(ndefRawLen);
         QByteArray data;
         for(i = 0x00; i < ndefRawLen; i++)
         {
             data.append(NDEFContent[i]);
             if(i%30 == 0 && 0x00 != i)
             {
-                qDebug() << "";
+                //qDebug() << "";
             }
         }
         data = data.toHex().toUpper();
-        qDebug() << data;
-        emit sigCardData(data);
+        //qDebug() << data;
+        //emit sigCardData(data);
     }
 
     if(NULL != NDEFContent)

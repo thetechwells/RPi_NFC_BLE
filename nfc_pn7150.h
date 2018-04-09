@@ -117,7 +117,7 @@ protected:
 
 signals:
     void sigMsg(QString, int);
-    void sigCardData(QByteArray);
+    void sigCardData(QString);
 
 public slots:
     void sltNfcEndThread();

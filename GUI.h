@@ -22,8 +22,16 @@ private:
     Ui::GUI *ui;
 
 signals:
+    void sigBtnPairingPressed();
+    void sigBtnDisconnectPressed();
+    void sigAlarm1();
 
 public slots:
+    void btnPairingPressed();
+    void btnDisconnectPressed();
+    void btnAlarm1Pressed();
+    void btnAlarm2Pressed();
+    void btnAlarm3Pressed();
     void sltStatusBar(QString msg,int timeOut);
 };
 
