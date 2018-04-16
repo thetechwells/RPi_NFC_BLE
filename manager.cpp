@@ -10,6 +10,7 @@ manager::manager(QObject *parent) : QObject(parent)
     QObject::connect(this, SIGNAL(sigNfcEndThread()), nfcDevice, SLOT(sltNfcEndThread()));
     QObject::connect(nfcDevice, SIGNAL(sigMsg(QString,int)), parentThread, SLOT(sltStatusBar(QString,int)));
     QObject::connect(this, SIGNAL(sigMsg(QString,int)), parentThread, SLOT(sltStatusBar(QString,int)));
+    QObject::connect(this, SIGNAL(sigUpdateBatteryStatus(QString)), parentThread, SLOT(sltUpdateBatteryStatus(QString)));
 
     nfcDevice->start();
 
@@ -21,6 +22,7 @@ manager::~manager()
     nfcDevice->quit();
     delete nfcDevice;
     delete bluetoothDevice;
+    delete batReadTimer;
 }
 
 void manager::sltCardData(QString dataIn)
@@ -38,7 +40,7 @@ void manager::sltCardData(QString dataIn)
 void manager::sltAlarm1()
 {
     qDebug() << "Alarm" << bleController->state();
-    if (true) //QLowEnergyController::ConnectedState == bleController->state())
+    if (QLowEnergyController::DiscoveredState == bleController->state())
     {
         qDebug() << bleController->services().length();
         for (int i = 0; i < bleController->services().length(); i++)
@@ -49,19 +51,9 @@ void manager::sltAlarm1()
             {
                 foreach(QLowEnergyCharacteristic c, bleService->characteristics())
                 {
-                    QLowEnergyDescriptor d = c.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
-                    if(!c.isValid()){
+                    if(!c.isValid())
+                    {
                         continue;
-                    }
-                    QByteArray hexChar = QByteArray::fromHex("2");
-                    if(c.properties() & QLowEnergyCharacteristic::Read)
-                    { // enable read
-                        bleService->writeDescriptor(d, hexChar);
-                    }
-                    hexChar = QByteArray::fromHex("8");
-                    if(c.properties() & QLowEnergyCharacteristic::Write)
-                    { // enable write
-                        bleService->writeDescriptor(d, hexChar);
                     }
                     if (writeChar == QByteArray::fromHex("1"))
                     {
@@ -71,6 +63,7 @@ void manager::sltAlarm1()
                     {
                         writeChar = QByteArray::fromHex("1");
                     }
+                    qDebug() << writeChar;
                     qDebug() << c.uuid().toString();
                     bleService->writeCharacteristic(c, writeChar, QLowEnergyService::WriteWithoutResponse);
                 }
@@ -79,11 +72,58 @@ void manager::sltAlarm1()
     }
     else
     {
-        qDebug() << "connected state not is it";
+        // do nothing if no bluetooth device is connected and discovered.
+        qDebug() << "connected state not it is";
     }
 }
 
-/* foreach(QLowEnergyCharacteristic c, bleService->characteristics())
+void manager::sltBatteryUpdate()
+{
+    emit sigMsg("Bat Update", 3000);
+    if (QLowEnergyController::DiscoveredState == bleController->state())
+    {
+        for (int i = 0; i < bleController->services().length(); i++)
+        {
+            //qDebug() << bleController->services().at(i).toString() << batUUID;
+            if (bleController->services().at(i).toString() == batUUID)
+            {
+                foreach(QLowEnergyCharacteristic c, bleService->characteristics())
+                {
+                    if(!c.isValid())
+                    {
+                        continue;
+                    }
+                    if(c.properties() & QLowEnergyCharacteristic::Read)
+                    {
+                        qDebug() << "Connect char read";
+                        qDebug() << c.uuid().toString();
+                        connect(bleService, SIGNAL(characteristicRead(QLowEnergyCharacteristic,QByteArray)), this, SLOT(sltBatteryStatusRead(QLowEnergyCharacteristic,QByteArray)));
+                        bleService->readCharacteristic(c);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        // do nothing if no bluetooth device is connected and discovered.
+        qDebug() << "connected state not it is";
+    }
+}
+
+void manager::sltBatteryStatusRead(QLowEnergyCharacteristic c, QByteArray data)
+{
+    if (c.uuid().toString() == "{f0001131-0451-4000-b000-000000000000}")
+    {
+        QByteArray data2 = data.toHex();
+        bool *ok = Q_NULLPTR;
+        int base = 16;
+        emit sigUpdateBatteryStatus(QString::number(data2.toUInt(ok,base)));
+    }
+}
+
+/*
+foreach(QLowEnergyCharacteristic c, bleService->characteristics())
 {
     QLowEnergyDescriptor d = c.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
     if(!c.isValid()){
@@ -97,9 +137,9 @@ void manager::sltAlarm1()
     hexChar = QByteArray::fromHex("8");
     if(c.properties() & QLowEnergyCharacteristic::Write)
     { // enable write
-        bleService->writeDescriptor(d, hexChar);
-    }
-    */
+    bleService->writeDescriptor(d, hexChar);
+}
+*/
 
 void manager::sltBluetoothConnect()
 {
@@ -111,20 +151,46 @@ void manager::sltBluetoothConnect()
 
 void manager::sltDisconnect()
 {
-    if (QLowEnergyController::ConnectedState == bleController->state())
+    switch(bleController->state())
     {
-        while (!bleServiceList->isEmpty())
+        case QLowEnergyController::UnconnectedState:
         {
-            delete bleServiceList->front();
-            bleServiceList->pop_front();
+            break;
         }
-        bleController->disconnectFromDevice();
+        case QLowEnergyController::ConnectingState:
+        {
+            break;
+        }
+        case QLowEnergyController::ConnectedState:
+        {
+            break;
+        }
+        case QLowEnergyController::DiscoveringState:
+        {
+            break;
+        }
+        case QLowEnergyController::DiscoveredState:
+        {
+            while (!bleServiceList->isEmpty())
+            {
+                delete bleServiceList->front();
+                bleServiceList->pop_front();
+            }
+            bleController->disconnectFromDevice();
+            delete bleServiceList;
+            delete bleService;
+            delete bleController;
+            break;
+        }
+        case QLowEnergyController::ClosingState:
+        {
+            break;
+        }
+        case QLowEnergyController::AdvertisingState:
+        {
+            break;
+        }
     }
-    while (QLowEnergyController::UnconnectedState != bleController->state())
-    {
-
-    }
-    delete bleController;
 }
 
 void manager::startDeviceDiscovery()
@@ -141,7 +207,6 @@ void manager::startDeviceDiscovery()
 void manager::sltDeviceDiscovered(const QBluetoothDeviceInfo &device)
 {
     qDebug() << "Found new device:" << device.name() << device.address().toString();
-    //if (device.address().toString() == "54:6C:0E:9B:5A:E1")
     if (device.address().toString() == deviceMACAddress)
     {
         emit sigMsg(device.address().toString(), 3000);
@@ -177,26 +242,22 @@ void manager::sltDeviceDiscoveryFinished()
     }
 
     serviceNum = 0;
-    //qDebug() << bleServiceList->length();
     connect(this, SIGNAL(sigServiceDetailsLoop(int)), this, SLOT(sltServiceDetailsLoop(int)));
     emit sigServiceDetailsLoop(serviceNum);
 }
 
 void manager::sltServiceDetailsLoop(int num)
 {
-    //qDebug() << "Im in" << num;
     if (bleServiceList->length() > num)
     {
-        //qDebug() << "Im in further" << num;
         bleService = bleServiceList->at(num);
         connect(bleService, SIGNAL(stateChanged(QLowEnergyService::ServiceState)), this, SLOT(sltServiceDetailsDiscovered(QLowEnergyService::ServiceState)));
         connect(bleService, SIGNAL(error(QLowEnergyService::ServiceError)), this, SLOT(sltBLEServiceError(QLowEnergyService::ServiceError)));
-        //qDebug() << "Im includedServices" << bleService->includedServices().length();
         if (bleService->includedServices().length() > 0)
         {
             for (int i = 0; i < bleService->includedServices().length(); i++)
             {
-                //qDebug() << bleService->includedServices().at(i).toString() << "Included Services";
+                qDebug() << bleService->includedServices().at(i).toString() << "Included Services";
             }
         }
         else
@@ -208,6 +269,10 @@ void manager::sltServiceDetailsLoop(int num)
     {
         emit sigMsg("All Service Details Discovered", 10000);
         qDebug() << "Im done!" << num;
+        batReadTimer = new QTimer();
+        //batReadTimer->setSingleShot(true);
+        connect(batReadTimer, SIGNAL(timeout()), this, SLOT(sltBatteryUpdate()));
+        batReadTimer->start(1000);
     }
 }
 
@@ -233,8 +298,8 @@ void manager::sltServiceDetailsDiscovered(QLowEnergyService::ServiceState newSta
     }
     else if (newState == QLowEnergyService::DiscoveringServices)
     {
-        emit sigMsg("Discoversing Services", 5000);
-        qDebug() << "Discoversing Services";
+        emit sigMsg("Discovering Services", 5000);
+        qDebug() << "Discovering Services";
     }
     else if (newState == QLowEnergyService::DiscoveryRequired)
     {
